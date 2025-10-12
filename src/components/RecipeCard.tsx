@@ -1,86 +1,372 @@
-import { Link } from "react-router-dom";
-import { StarRating } from "./StarRating";
+import React, { useState } from 'react';
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  CardActions,
+  Typography,
+  Box,
+  Chip,
+  IconButton,
+  Avatar,
+  Rating,
+  useTheme,
+  useMediaQuery,
+  Skeleton,
+} from '@mui/material';
+import {
+  Favorite,
+  FavoriteBorder,
+  AccessTime,
+  People,
+  Restaurant,
+} from '@mui/icons-material';
 
 interface Recipe {
-  _id: string;
+  id: string;
   title: string;
   description?: string;
-  cuisine: string;
+  imageUrl?: string;
   prepTime: number;
   servings: number;
-  averageRating: number;
+  cuisine: string;
+  tags: string[];
+  rating: number;
   totalRatings: number;
-  imageUrls?: Array<{ id: string; url: string | null }>;
-  author?: {
-    profile?: {
-      username: string;
-    } | null;
+  author: {
+    username: string;
+    avatar?: string;
   };
+  isFavorite?: boolean;
 }
+
+// Default recipe data to prevent undefined errors
+const defaultRecipe: Recipe = {
+  id: '',
+  title: 'Loading...',
+  description: '',
+  imageUrl: '',
+  prepTime: 0,
+  servings: 0,
+  cuisine: 'Other',
+  tags: [],
+  rating: 0,
+  totalRatings: 0,
+  author: {
+    username: 'User',
+    avatar: '',
+  },
+  isFavorite: false,
+};
 
 interface RecipeCardProps {
   recipe: Recipe;
+  onFavoriteToggle?: (recipeId: string) => void;
+  onClick?: (recipeId: string) => void;
+  loading?: boolean;
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+export const RecipeCard: React.FC<RecipeCardProps> = ({
+  recipe,
+  onFavoriteToggle,
+  onClick,
+  loading = false,
+}) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const [imageLoading, setImageLoading] = useState(true);
+
+  // Use default recipe data if recipe is undefined or incomplete
+  const safeRecipe = recipe || defaultRecipe;
+
+  const handleCardClick = () => {
+    if (onClick && !loading && safeRecipe.id) {
+      onClick(safeRecipe.id);
+    }
+  };
+
+  const handleFavoriteClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (onFavoriteToggle && !loading && safeRecipe.id) {
+      onFavoriteToggle(safeRecipe.id);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card sx={{ height: '100%', cursor: 'pointer' }}>
+        <Skeleton variant="rectangular" height={200} />
+        <CardContent>
+          <Skeleton variant="text" height={24} width="80%" />
+          <Skeleton variant="text" height={20} width="60%" sx={{ mt: 1 }} />
+          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+            <Skeleton variant="rectangular" height={24} width={60} />
+            <Skeleton variant="rectangular" height={24} width={80} />
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Link to={`/recipe/${recipe._id}`} className="group">
-      <div className="bg-white rounded-container shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-        {/* Recipe Image */}
-        <div className="aspect-video bg-secondary">
-          {recipe.imageUrls?.[0]?.url ? (
-            <img
-              src={recipe.imageUrls[0].url}
-              alt={recipe.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+    <Card
+      sx={{
+        height: '100%',
+        cursor: 'pointer',
+        transition: 'transform 180ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+        '&:hover': {
+          transform: 'scale(1.02)',
+          boxShadow: '0px 8px 16px rgba(46, 71, 59, 0.15)',
+        },
+      }}
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleCardClick();
+        }
+      }}
+      aria-label={`View recipe: ${safeRecipe.title}`}
+    >
+      {/* Recipe Image */}
+      <Box sx={{ position: 'relative' }}>
+        <CardMedia
+          component="img"
+          height="200"
+          image={safeRecipe.imageUrl || '/placeholder-recipe.jpg'}
+          alt={safeRecipe.title}
+          onLoad={() => setImageLoading(false)}
+          sx={{
+            display: imageLoading ? 'none' : 'block',
+            objectFit: 'cover',
+          }}
+        />
+        {imageLoading && (
+          <Skeleton variant="rectangular" height={200} />
+        )}
+        
+        {/* Favorite Button */}
+        <IconButton
+          onClick={handleFavoriteClick}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(4px)',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 1)',
+            },
+            '&:focus': {
+              outline: `2px solid ${theme.palette.info.main}`,
+              outlineOffset: '2px',
+            },
+          }}
+          aria-label={safeRecipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          {safeRecipe.isFavorite ? (
+            <Favorite sx={{ color: theme.palette.error.main }} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-text/50">
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
+            <FavoriteBorder sx={{ color: theme.palette.text.secondary }} />
           )}
-        </div>
+        </IconButton>
 
-        <div className="p-4">
-          {/* Title */}
-          <h3 className="text-lg font-semibold text-primary mb-2 line-clamp-2 group-hover:text-primary-hover transition-colors">
-            {recipe.title}
-          </h3>
+        {/* Cuisine Badge */}
+        <Chip
+          label={safeRecipe.cuisine}
+          size="small"
+          sx={{
+            position: 'absolute',
+            bottom: 8,
+            left: 8,
+            backgroundColor: theme.palette.info.main,
+            color: theme.palette.text.primary,
+            fontWeight: 500,
+            fontSize: '0.75rem',
+          }}
+        />
+      </Box>
 
-          {/* Description */}
-          {recipe.description && (
-            <p className="text-text/70 text-sm mb-3 line-clamp-2">
-              {recipe.description}
-            </p>
-          )}
+      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+        {/* Title */}
+        <Typography
+          variant="h6"
+          component="h3"
+          sx={{
+            fontWeight: 600,
+            mb: 1,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            lineHeight: 1.3,
+            minHeight: '2.6em',
+          }}
+        >
+          {safeRecipe.title}
+        </Typography>
 
-          {/* Meta Info */}
-          <div className="flex items-center justify-between text-sm text-text/70 mb-3">
-            <span>{recipe.prepTime} min</span>
-            <span>{recipe.servings} servings</span>
-            <span className="px-2 py-1 bg-accent rounded-full text-xs">
-              {recipe.cuisine}
-            </span>
-          </div>
+        {/* Description */}
+        {safeRecipe.description && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              mb: 2,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              lineHeight: 1.4,
+              minHeight: '2.8em',
+            }}
+          >
+            {safeRecipe.description}
+          </Typography>
+        )}
 
-          {/* Rating */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
-              <StarRating rating={recipe.averageRating} readonly size="sm" />
-              <span className="text-xs text-text/70">
-                ({recipe.totalRatings})
-              </span>
-            </div>
-            {recipe.author?.profile?.username && (
-              <span className="text-xs text-text/70">
-                by {recipe.author.profile.username}
-              </span>
+        {/* Meta Information */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            mb: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary">
+              {safeRecipe.prepTime}m
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <People sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" color="text.secondary">
+              {safeRecipe.servings}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Tags */}
+        {safeRecipe.tags && safeRecipe.tags.length > 0 && (
+          <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap' }}>
+            {safeRecipe.tags.slice(0, isMobile ? 2 : 3).map((tag, index) => (
+              <Chip
+                key={index}
+                label={`#${tag}`}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontSize: '0.75rem',
+                  height: 20,
+                  borderColor: theme.palette.info.main,
+                  color: theme.palette.info.main,
+                  '&:hover': {
+                    backgroundColor: `${theme.palette.info.main}10`,
+                  },
+                }}
+              />
+            ))}
+            {safeRecipe.tags && safeRecipe.tags.length > (isMobile ? 2 : 3) && (
+              <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                +{safeRecipe.tags.length - (isMobile ? 2 : 3)}
+              </Typography>
             )}
-          </div>
-        </div>
-      </div>
-    </Link>
+          </Box>
+        )}
+      </CardContent>
+
+      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+        {/* Rating */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Rating
+            value={safeRecipe.rating}
+            precision={0.1}
+            readOnly
+            size="small"
+            sx={{
+              '& .MuiRating-iconFilled': {
+                color: theme.palette.warning.main,
+              },
+            }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            ({safeRecipe.totalRatings})
+          </Typography>
+        </Box>
+
+        {/* Author */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Avatar
+            src={safeRecipe.author?.avatar}
+            sx={{
+              width: 24,
+              height: 24,
+              fontSize: '0.75rem',
+              backgroundColor: theme.palette.info.main,
+              color: theme.palette.text.primary,
+            }}
+          >
+            {safeRecipe.author?.username?.[0]?.toUpperCase() || 'U'}
+          </Avatar>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+            {safeRecipe.author?.username || 'User'}
+          </Typography>
+        </Box>
+      </CardActions>
+    </Card>
   );
+};
+
+// Grid container component for responsive layout
+interface RecipeGridProps {
+  recipes: Recipe[];
+  onRecipeClick?: (recipeId: string) => void;
+  onFavoriteToggle?: (recipeId: string) => void;
+  loading?: boolean;
 }
+
+export const RecipeGrid: React.FC<RecipeGridProps> = ({
+  recipes = [],
+  onRecipeClick,
+  onFavoriteToggle,
+  loading = false,
+}) => {
+  const theme = useTheme();
+  
+  // Show skeleton cards when loading
+  const displayRecipes = loading ? Array(8).fill(null) : recipes;
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: '1fr',
+          md: 'repeat(2, 1fr)',
+          lg: 'repeat(3, 1fr)',
+          xl: 'repeat(4, 1fr)',
+        },
+        gap: 3,
+        px: { xs: 2, sm: 3 },
+        py: 2,
+      }}
+    >
+      {displayRecipes.map((recipe, index) => (
+        <RecipeCard
+          key={loading ? `skeleton-${index}` : recipe?.id || `recipe-${index}`}
+          recipe={recipe}
+          onFavoriteToggle={onFavoriteToggle}
+          onClick={onRecipeClick}
+          loading={loading}
+        />
+      ))}
+    </Box>
+  );
+};
