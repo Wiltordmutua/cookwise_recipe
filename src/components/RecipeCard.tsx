@@ -349,13 +349,14 @@ export const RecipeGrid: React.FC<RecipeGridProps> = ({
         display: 'grid',
         gridTemplateColumns: {
           xs: '1fr',
+          sm: 'repeat(2, 1fr)',
           md: 'repeat(2, 1fr)',
           lg: 'repeat(3, 1fr)',
           xl: 'repeat(4, 1fr)',
         },
-        gap: 3,
-        px: { xs: 2, sm: 3 },
-        py: 2,
+        gap: { xs: 2, sm: 3 },
+        px: { xs: 1, sm: 2, md: 3 },
+        py: { xs: 1, sm: 2 },
       }}
     >
       {displayRecipes.map((recipe, index) => (

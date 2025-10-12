@@ -15,6 +15,7 @@ import {
   useMediaQuery,
   alpha,
   Tooltip,
+  Divider,
 } from '@mui/material';
 import {
   Search,
@@ -54,9 +55,11 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -114,12 +117,23 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         borderBottom: '1px solid #E0E0E0',
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1, sm: 2 } }}>
-        {/* Left Section - Logo and Navigation */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+      <Toolbar sx={{ 
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        px: { xs: 1, sm: 2 },
+        py: { xs: 1, sm: 0 },
+      }}>
+        {/* Top Row - Logo and User Actions */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          width: '100%',
+          mb: { xs: 1, md: 0 }
+        }}>
           {/* Brand Logo */}
           <Typography
-            variant="h5"
+            variant={isMobile ? 'h6' : 'h5'}
             component="h1"
             sx={{
               fontWeight: 700,
@@ -147,37 +161,134 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             Cookwise
           </Typography>
 
-          {/* Desktop Navigation */}
-          {!isMobile && user && (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.path}
-                  onClick={() => handleNavigate(item.path)}
-                  startIcon={item.icon}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                      color: theme.palette.primary.main,
-                    },
-                    '&:focus': {
-                      outline: `2px solid ${theme.palette.info.main}`,
-                      outlineOffset: '2px',
-                    },
-                  }}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </Box>
-          )}
+          {/* User Actions - Right Side */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {user ? (
+              <>
+                {/* Mobile Search Button */}
+                {isMobile && (
+                  <IconButton
+                    onClick={() => setShowMobileSearch(!showMobileSearch)}
+                    sx={{
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      },
+                      '&:focus': {
+                        outline: `2px solid ${theme.palette.info.main}`,
+                        outlineOffset: '2px',
+                      },
+                    }}
+                    aria-label="Toggle search"
+                  >
+                    <Search />
+                  </IconButton>
+                )}
+
+                {/* Mobile Hamburger Menu */}
+                {isMobile && (
+                  <IconButton
+                    onClick={handleMobileMenuOpen}
+                    aria-label="Open navigation menu"
+                    aria-controls={mobileMenuAnchor ? 'mobile-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={mobileMenuAnchor ? 'true' : undefined}
+                    sx={{
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      },
+                      '&:focus': {
+                        outline: `2px solid ${theme.palette.info.main}`,
+                        outlineOffset: '2px',
+                      },
+                    }}
+                  >
+                    <MenuIcon />
+                  </IconButton>
+                )}
+
+                {/* Notifications */}
+                <Tooltip title="Notifications">
+                  <IconButton
+                    color="inherit"
+                    aria-label={`${user.notificationCount} notifications`}
+                    onClick={() => handleNavigate('/notifications')}
+                    sx={{
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      },
+                      '&:focus': {
+                        outline: `2px solid ${theme.palette.info.main}`,
+                        outlineOffset: '2px',
+                      },
+                    }}
+                  >
+                    <Badge
+                      badgeContent={user.notificationCount}
+                      color="error"
+                      max={99}
+                    >
+                      <Notifications />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+
+                {/* User Avatar */}
+                <Tooltip title="Account menu">
+                  <IconButton
+                    onClick={handleProfileMenuOpen}
+                    aria-label="Open account menu"
+                    aria-controls={anchorEl ? 'account-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={anchorEl ? 'true' : undefined}
+                    sx={{
+                      p: 0,
+                      '&:focus': {
+                        outline: `2px solid ${theme.palette.info.main}`,
+                        outlineOffset: '2px',
+                      },
+                    }}
+                  >
+                    <Avatar
+                      src={user.avatar}
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        backgroundColor: theme.palette.info.main,
+                        color: theme.palette.text.primary,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {user.username[0].toUpperCase()}
+                    </Avatar>
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : (
+              <Button
+                onClick={onSignIn}
+                variant="contained"
+                size={isMobile ? 'small' : 'medium'}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: { xs: 2, sm: 3 },
+                  '&:focus': {
+                    outline: `2px solid ${theme.palette.info.main}`,
+                    outlineOffset: '2px',
+                  },
+                }}
+              >
+                Sign In
+              </Button>
+            )}
+          </Box>
         </Box>
 
-        {/* Center Section - Search */}
-        {!isMobile && (
+        {/* Mobile Search Bar */}
+        {isMobile && showMobileSearch && (
           <Box
             component="form"
             onSubmit={handleSearchSubmit}
@@ -192,10 +303,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 backgroundColor: theme.palette.background.paper,
                 boxShadow: `0 0 0 2px ${theme.palette.info.main}40`,
               },
-              marginLeft: 2,
-              marginRight: 2,
-              width: '100%',
-              maxWidth: 400,
+              mb: 1,
             }}
           >
             <Box
@@ -231,110 +339,47 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </Box>
         )}
 
-        {/* Right Section - User Actions */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {user ? (
-            <>
-              {/* Notifications */}
-              <Tooltip title="Notifications">
-                <IconButton
-                  color="inherit"
-                  aria-label={`${user.notificationCount} notifications`}
-                  onClick={() => handleNavigate('/notifications')}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                    },
-                    '&:focus': {
-                      outline: `2px solid ${theme.palette.info.main}`,
-                      outlineOffset: '2px',
-                    },
-                  }}
-                >
-                  <Badge
-                    badgeContent={user.notificationCount}
-                    color="error"
-                    max={99}
-                  >
-                    <Notifications />
-                  </Badge>
-                </IconButton>
-              </Tooltip>
-
-              {/* User Avatar */}
-              <Tooltip title="Account menu">
-                <IconButton
-                  onClick={handleProfileMenuOpen}
-                  aria-label="Open account menu"
-                  aria-controls={anchorEl ? 'account-menu' : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={anchorEl ? 'true' : undefined}
-                  sx={{
-                    p: 0,
-                    '&:focus': {
-                      outline: `2px solid ${theme.palette.info.main}`,
-                      outlineOffset: '2px',
-                    },
-                  }}
-                >
-                  <Avatar
-                    src={user.avatar}
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      backgroundColor: theme.palette.info.main,
-                      color: theme.palette.text.primary,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {user.username[0].toUpperCase()}
-                  </Avatar>
-                </IconButton>
-              </Tooltip>
-
-              {/* Mobile Menu Button */}
-              {isMobile && (
-                <IconButton
-                  color="inherit"
-                  aria-label="Open navigation menu"
-                  onClick={handleMobileMenuOpen}
-                  aria-controls={mobileMenuAnchor ? 'mobile-menu' : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={mobileMenuAnchor ? 'true' : undefined}
-                  sx={{
-                    color: theme.palette.text.primary,
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                    },
-                    '&:focus': {
-                      outline: `2px solid ${theme.palette.info.main}`,
-                      outlineOffset: '2px',
-                    },
-                  }}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-            </>
-          ) : (
-            <Button
-              onClick={onSignIn}
-              variant="contained"
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 3,
-                '&:focus': {
-                  outline: `2px solid ${theme.palette.info.main}`,
-                  outlineOffset: '2px',
-                },
-              }}
-            >
-              Sign In
-            </Button>
-          )}
-        </Box>
+        {/* Navigation Tabs - Visible on Tablet and Desktop Only */}
+        {user && !isMobile && (
+          <Box sx={{ 
+            display: 'flex', 
+            gap: { xs: 0.5, sm: 1 },
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '&::-webkit-scrollbar': {
+              display: 'none',
+            },
+            py: { xs: 0.5, sm: 0 },
+          }}>
+            {navigationItems.map((item) => (
+              <Button
+                key={item.path}
+                onClick={() => handleNavigate(item.path)}
+                startIcon={item.icon}
+                size="medium"
+                sx={{
+                  color: theme.palette.text.primary,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  minWidth: 'auto',
+                  px: 2,
+                  flexShrink: 0,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                    color: theme.palette.primary.main,
+                  },
+                  '&:focus': {
+                    outline: `2px solid ${theme.palette.info.main}`,
+                    outlineOffset: '2px',
+                  },
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </Box>
+        )}
       </Toolbar>
 
       {/* Profile Menu */}
@@ -411,6 +456,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           sx: {
             mt: 1,
             minWidth: 200,
+            maxWidth: '90vw',
           },
         }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
@@ -421,20 +467,73 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             key={index}
             onClick={() => handleNavigate(item.path)}
             sx={{
+              py: 1.5,
+              px: 2,
               '&:focus': {
                 backgroundColor: alpha(theme.palette.primary.main, 0.08),
                 outline: `2px solid ${theme.palette.info.main}`,
                 outlineOffset: '-2px',
               },
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.primary.main, 0.04),
+              },
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {item.icon}
-              <Typography variant="body2">{item.label}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ 
+                color: theme.palette.primary.main,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 24,
+                height: 24,
+              }}>
+                {item.icon}
+              </Box>
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                {item.label}
+              </Typography>
             </Box>
           </MenuItem>
         ))}
+        
+        {/* Divider */}
+        <Divider sx={{ my: 1 }} />
+        
+        {/* Additional Mobile Menu Items */}
+        <MenuItem
+          onClick={() => handleNavigate('/favorites')}
+          sx={{
+            py: 1.5,
+            px: 2,
+            '&:focus': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              outline: `2px solid ${theme.palette.info.main}`,
+              outlineOffset: '-2px',
+            },
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.primary.main, 0.04),
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ 
+              color: theme.palette.primary.main,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 24,
+              height: 24,
+            }}>
+              <Favorite />
+            </Box>
+            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+              Favorites
+            </Typography>
+          </Box>
+        </MenuItem>
       </Menu>
+
     </AppBar>
   );
 };
