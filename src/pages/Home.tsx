@@ -30,9 +30,26 @@ export function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {recipes.map((recipe) => (
-              <RecipeCard key={recipe._id} recipe={recipe} />
-            ))}
+            {recipes.map((recipe) => {
+              const mapped = {
+                id: String(recipe._id),
+                title: recipe.title,
+                description: recipe.description,
+                imageUrl: recipe.imageUrls?.[0]?.url || "",
+                prepTime: recipe.prepTime,
+                servings: recipe.servings,
+                cuisine: recipe.cuisine,
+                tags: recipe.tags || [],
+                rating: recipe.averageRating ?? 0,
+                totalRatings: recipe.totalRatings ?? 0,
+                author: {
+                  username: recipe.author?.profile?.username || "User",
+                  avatar: "",
+                },
+                isFavorite: false,
+              };
+              return <RecipeCard key={recipe._id} recipe={mapped} />;
+            })}
           </div>
         )}
       </Authenticated>

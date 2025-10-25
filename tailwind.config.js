@@ -8,16 +8,16 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#355956',
-          hover: '#2F5451',
+          DEFAULT: '#2E473B', // dark green
+          hover: '#254036',
         },
         secondary: {
-          DEFAULT: '#E6DACC',
-          hover: '#DDD0C1',
+          DEFAULT: '#5C3A1C', // brown
+          hover: '#4A2E16',
         },
-        accent: '#BEC9C8',
-        background: '#FFFFFF',
-        text: '#2F5451',
+        accent: '#CBB37B', // gold
+        background: '#F7F3E8', // cream
+        text: '#1A1A1A', // near-black
       },
       spacing: {
         'section': '2rem',
