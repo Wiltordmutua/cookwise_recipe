@@ -14,7 +14,7 @@ export function Search() {
 
   const cuisines = [
     "Italian", "Mexican", "Asian", "American", "Mediterranean", 
-    "Indian", "French", "Other"
+    "Indian", "French", "African", "Other"
   ];
 
   return (

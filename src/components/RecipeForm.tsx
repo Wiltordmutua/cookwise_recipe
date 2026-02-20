@@ -58,6 +58,7 @@ const cuisineOptions = [
   'Mediterranean',
   'Indian',
   'French',
+  'African',
   'Other',
 ];
 

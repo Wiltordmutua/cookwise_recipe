@@ -156,6 +156,7 @@ export function CreateRecipe() {
                 <option value="Mediterranean">Mediterranean</option>
                 <option value="Indian">Indian</option>
                 <option value="French">French</option>
+                <option value="African">African</option>
                 <option value="Other">Other</option>
               </select>
             </div>

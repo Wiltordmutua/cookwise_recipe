@@ -40,7 +40,7 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
   if (loading) {
     return (
       <Card sx={{ height: '100%' }}>
-        <Skeleton variant="rectangular" height={200} />
+        <Skeleton variant="rectangular" height={200} width="100%" />
         <CardContent>
           <Skeleton variant="text" height={28} width="80%" />
           <Skeleton variant="text" height={20} width="60%" sx={{ mt: 1 }} />
@@ -58,22 +58,25 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
       onClick={handleCardClick}
       sx={{
         height: '100%',
+        width: '100%',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
+        maxHeight: '100%',
       }}
     >
       {/* Image Section */}
-      <Box sx={{ position: 'relative' }}>
-        {!imageLoaded && <Skeleton variant="rectangular" height={200} />}
+      <Box sx={{ position: 'relative', width: '100%', height: 200, overflow: 'hidden' }}>
+        {!imageLoaded && <Skeleton variant="rectangular" height={200} width="100%" />}
         <CardMedia
           component="img"
-          height="200"
           image={recipe?.imageUrl || '/placeholder-recipe.jpg'}
           alt={recipe?.title || 'Recipe'}
           onLoad={() => setImageLoaded(true)}
           sx={{
             display: imageLoaded ? 'block' : 'none',
+            width: '100%',
+            height: '200px',
             objectFit: 'cover',
           }}
         />
@@ -115,7 +118,7 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
       </Box>
 
       {/* Content */}
-      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+      <CardContent sx={{ flexGrow: 1, pb: 1, display: 'flex', flexDirection: 'column' }}>
         <Typography
           variant="h6"
           component="h3"
@@ -127,32 +130,32 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            minHeight: '3em',
+            height: '3em',
+            lineHeight: '1.5em',
           }}
         >
           {recipe?.title || 'Loading...'}
         </Typography>
 
-        {recipe?.description && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mb: 2,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              minHeight: '2.8em',
-            }}
-          >
-            {recipe.description}
-          </Typography>
-        )}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            mb: 2,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            height: '2.8em',
+            lineHeight: '1.4em',
+          }}
+        >
+          {recipe?.description || '\u00A0'}
+        </Typography>
 
         {/* Meta Information */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, minHeight: '24px' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
             <Typography variant="body2" color="text.secondary">
@@ -168,31 +171,35 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
         </Box>
 
         {/* Tags */}
-        {recipe?.tags && recipe.tags.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
-            {recipe.tags.slice(0, 3).map((tag, index) => (
-              <Chip
-                key={index}
-                label={`#${tag}`}
-                size="small"
-                variant="outlined"
-                sx={{
-                  fontSize: '0.7rem',
-                  height: 22,
-                }}
-              />
-            ))}
-            {recipe.tags.length > 3 && (
-              <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', ml: 0.5 }}>
-                +{recipe.tags.length - 3}
-              </Typography>
-            )}
-          </Box>
-        )}
+        <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap', minHeight: '24px' }}>
+          {recipe?.tags && recipe.tags.length > 0 ? (
+            <>
+              {recipe.tags.slice(0, 3).map((tag, index) => (
+                <Chip
+                  key={index}
+                  label={`#${tag}`}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    fontSize: '0.7rem',
+                    height: 22,
+                  }}
+                />
+              ))}
+              {recipe.tags.length > 3 && (
+                <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', ml: 0.5 }}>
+                  +{recipe.tags.length - 3}
+                </Typography>
+              )}
+            </>
+          ) : (
+            <Box sx={{ height: 22 }} />
+          )}
+        </Box>
       </CardContent>
 
       {/* Footer */}
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, minHeight: '48px', mt: 'auto' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Rating
             value={recipe?.rating || 0}
