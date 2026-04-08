@@ -84,6 +84,28 @@ const applicationTables = {
     relatedUserId: v.optional(v.id("users")),
   }).index("by_user", ["userId"]),
 
+  recipeTips: defineTable({
+    recipeId: v.id("recipes"),
+    tipperId: v.id("users"),
+    authorId: v.id("users"),
+    amount: v.number(),
+    phoneNumber: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("success"),
+      v.literal("failed"),
+    ),
+    checkoutRequestId: v.optional(v.string()),
+    merchantRequestId: v.optional(v.string()),
+    responseCode: v.optional(v.string()),
+    responseDescription: v.optional(v.string()),
+    mpesaReceiptNumber: v.optional(v.string()),
+  })
+    .index("by_recipe", ["recipeId"])
+    .index("by_author", ["authorId"])
+    .index("by_tipper", ["tipperId"])
+    .index("by_checkout_request_id", ["checkoutRequestId"]),
+
   userProfiles: defineTable({
     userId: v.id("users"),
     username: v.string(),

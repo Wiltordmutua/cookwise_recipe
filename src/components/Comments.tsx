@@ -27,7 +27,7 @@ export function Comments({ recipeId }: CommentsProps) {
       });
       setNewComment("");
       toast.success("Comment added!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to add comment");
     } finally {
       setIsSubmitting(false);
@@ -40,7 +40,7 @@ export function Comments({ recipeId }: CommentsProps) {
 
       {/* Add Comment Form */}
       {currentUser && (
-        <form onSubmit={handleSubmit} className="mb-6">
+        <form onSubmit={(e) => void handleSubmit(e)} className="mb-6">
           <div className="flex space-x-3">
             <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-sm font-semibold text-primary">
               {(currentUser.profile?.username || currentUser.name || "U")[0]?.toUpperCase()}

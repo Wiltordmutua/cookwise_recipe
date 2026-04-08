@@ -23,6 +23,7 @@ export function SignInForm() {
 
     try {
       await signIn('password', formData);
+      setSubmitting(false);
     } catch (error) {
       let toastTitle = '';
       if (error.message.includes('Invalid password')) {
@@ -115,7 +116,9 @@ export function SignInForm() {
           color="secondary"
           size="large"
           fullWidth
-          onClick={() => void signIn('anonymous')}
+          onClick={() => void signIn('anonymous').catch(() => {
+            toast.error('Could not sign in anonymously. Please try again.');
+          })}
           sx={{ py: 1.5 }}
         >
           Sign in anonymously

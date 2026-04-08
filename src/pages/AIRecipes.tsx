@@ -74,7 +74,7 @@ export function AIRecipes() {
       const recipes = await generateSuggestions({ ingredients: ingredients.trim() });
       setSuggestions(recipes);
       toast.success("Recipe suggestions generated!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate suggestions. Please try again.");
     } finally {
       setIsLoading(false);
@@ -93,7 +93,7 @@ export function AIRecipes() {
       });
       setSubstitutions(subs);
       toast.success("Ingredient substitutions generated!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate substitutions. Please try again.");
     } finally {
       setIsLoading(false);
@@ -112,7 +112,7 @@ export function AIRecipes() {
       });
       setTips(cookingTips);
       toast.success("Cooking tips generated!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate cooking tips. Please try again.");
     } finally {
       setIsLoading(false);
@@ -132,7 +132,7 @@ export function AIRecipes() {
       });
       setMealPlan(plan);
       toast.success("Meal plan generated!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate meal plan. Please try again.");
     } finally {
       setIsLoading(false);
@@ -140,10 +140,10 @@ export function AIRecipes() {
   };
 
   const tabs = [
-    { id: 'recipes' as TabType, label: 'Recipe Suggestions', icon: '🍳' },
-    { id: 'substitutions' as TabType, label: 'Ingredient Substitutions', icon: '🔄' },
-    { id: 'tips' as TabType, label: 'Cooking Tips', icon: '💡' },
-    { id: 'mealplan' as TabType, label: 'Meal Planning', icon: '📅' },
+    { id: 'recipes' as TabType, label: 'Recipe Suggestions' },
+    { id: 'substitutions' as TabType, label: 'Ingredient Substitutions' },
+    { id: 'tips' as TabType, label: 'Cooking Tips' },
+    { id: 'mealplan' as TabType, label: 'Meal Planning' },
   ];
 
   return (
@@ -169,7 +169,6 @@ export function AIRecipes() {
                 : 'bg-white text-primary border border-primary hover:bg-primary hover:text-white'
             }`}
           >
-            <span className="mr-2">{tab.icon}</span>
             {tab.label}
           </button>
         ))}
@@ -179,8 +178,8 @@ export function AIRecipes() {
       {activeTab === 'recipes' && (
         <div className="space-y-6">
           <div className="bg-white rounded-container shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-primary mb-4">🍳 Recipe Suggestions</h2>
-            <form onSubmit={handleRecipeSubmit} className="space-y-4">
+            <h2 className="text-2xl font-bold text-primary mb-4">Recipe Suggestions</h2>
+            <form onSubmit={(e) => void handleRecipeSubmit(e)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text mb-2">
                   What ingredients do you have?
@@ -230,8 +229,8 @@ export function AIRecipes() {
       {activeTab === 'substitutions' && (
         <div className="space-y-6">
           <div className="bg-white rounded-container shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-primary mb-4">🔄 Ingredient Substitutions</h2>
-            <form onSubmit={handleSubstitutionSubmit} className="space-y-4">
+            <h2 className="text-2xl font-bold text-primary mb-4">Ingredient Substitutions</h2>
+            <form onSubmit={(e) => void handleSubstitutionSubmit(e)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text mb-2">
                   What ingredient do you need to substitute?
@@ -298,8 +297,8 @@ export function AIRecipes() {
       {activeTab === 'tips' && (
         <div className="space-y-6">
           <div className="bg-white rounded-container shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-primary mb-4">💡 Cooking Tips</h2>
-            <form onSubmit={handleTipsSubmit} className="space-y-4">
+            <h2 className="text-2xl font-bold text-primary mb-4">Cooking Tips</h2>
+            <form onSubmit={(e) => void handleTipsSubmit(e)} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text mb-2">
                   What type of cooking do you need tips for?
@@ -366,8 +365,8 @@ export function AIRecipes() {
       {activeTab === 'mealplan' && (
         <div className="space-y-6">
           <div className="bg-white rounded-container shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-primary mb-4">📅 Meal Planning</h2>
-            <form onSubmit={handleMealPlanSubmit} className="space-y-4">
+            <h2 className="text-2xl font-bold text-primary mb-4">Meal Planning</h2>
+            <form onSubmit={(e) => void handleMealPlanSubmit(e)} className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text mb-2">

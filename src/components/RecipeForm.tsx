@@ -124,18 +124,20 @@ export const RecipeForm: React.FC<RecipeFormProps> = ({
           newErrors.servings = 'Servings must be at least 1';
         }
         break;
-      case 1:
+      case 1: {
         const validIngredients = formData.ingredients.filter(ing => ing.trim());
         if (validIngredients.length === 0) {
           newErrors.ingredients = 'At least one ingredient is required';
         }
         break;
-      case 2:
+      }
+      case 2: {
         const validSteps = formData.steps.filter(step => step.trim());
         if (validSteps.length === 0) {
           newErrors.steps = 'At least one instruction step is required';
         }
         break;
+      }
     }
 
     setErrors(newErrors);

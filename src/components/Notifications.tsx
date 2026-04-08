@@ -55,7 +55,7 @@ export function Notifications() {
                   className={`p-4 border-b border-accent last:border-b-0 cursor-pointer hover:bg-secondary/20 ${
                     !notification.isRead ? "bg-secondary/10" : ""
                   }`}
-                  onClick={() => handleMarkAsRead(notification._id)}
+                  onClick={() => void handleMarkAsRead(notification._id)}
                 >
                   <p className="text-sm text-text">{notification.message}</p>
                   <p className="text-xs text-text/50 mt-1">

@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,9 +11,18 @@ export function RecipeDetail() {
   const recipe = useQuery(api.recipes.getRecipe, { id: id as any });
   const rateRecipe = useMutation(api.recipes.rateRecipe);
   const toggleFavorite = useMutation(api.recipes.toggleFavorite);
-  
+  const initiateTip = useAction(api.tips.initiateRecipeTip);
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const tipSummary = useQuery(
+    api.tips.getRecipeTipSummary,
+    recipe ? { recipeId: recipe._id } : "skip",
+  );
+
   const [userRating, setUserRating] = useState(0);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [tipAmount, setTipAmount] = useState(100);
+  const [tipPhone, setTipPhone] = useState("");
+  const [isTipping, setIsTipping] = useState(false);
 
   if (recipe === undefined) {
     return (
@@ -40,7 +49,7 @@ export function RecipeDetail() {
       await rateRecipe({ recipeId: recipe._id, rating });
       setUserRating(rating);
       toast.success("Rating submitted!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to submit rating");
     } finally {
       setIsSubmittingRating(false);
@@ -51,8 +60,28 @@ export function RecipeDetail() {
     try {
       const isFavorited = await toggleFavorite({ recipeId: recipe._id });
       toast.success(isFavorited ? "Added to favorites!" : "Removed from favorites");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update favorites");
+    }
+  };
+
+  const handleTip = async () => {
+    setIsTipping(true);
+    try {
+      const result = await initiateTip({
+        recipeId: recipe._id,
+        amount: tipAmount,
+        phoneNumber: tipPhone,
+      });
+      if (result.status === "pending") {
+        toast.success(result.customerMessage);
+      } else {
+        toast.error("Could not start M-Pesa request. Check your number and Daraja settings.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to start tip");
+    } finally {
+      setIsTipping(false);
     }
   };
 
@@ -61,11 +90,11 @@ export function RecipeDetail() {
       <div className="bg-white rounded-container shadow-lg overflow-hidden">
         {/* Recipe Images */}
         {recipe.imageUrls.length > 0 && (
-          <div className="aspect-video bg-secondary">
+          <div className="h-52 sm:h-60 w-full overflow-hidden bg-secondary">
             <img
               src={recipe.imageUrls[0].url || ""}
               alt={recipe.title}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           </div>
         )}
@@ -87,14 +116,25 @@ export function RecipeDetail() {
                 </span>
               </div>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {loggedInUser && loggedInUser._id === recipe.authorId && (
+                <Link
+                  to={`/recipe/${recipe._id}/edit`}
+                  className="px-4 py-2 text-sm font-semibold text-primary border border-primary rounded-container hover:bg-primary hover:text-white transition-colors"
+                >
+                  Edit recipe
+                </Link>
+              )}
             <button
-              onClick={handleToggleFavorite}
+              type="button"
+              onClick={() => void handleToggleFavorite()}
               className="p-2 rounded-full hover:bg-secondary transition-colors"
             >
               <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </button>
+            </div>
           </div>
 
           {/* Description */}
@@ -116,7 +156,7 @@ export function RecipeDetail() {
               </div>
               <StarRating
                 rating={userRating}
-                onRatingChange={handleRating}
+                onRatingChange={(rating) => void handleRating(rating)}
                 disabled={isSubmittingRating}
               />
             </div>
@@ -173,6 +213,53 @@ export function RecipeDetail() {
       {/* Comments Section */}
       <div className="mt-8">
         <Comments recipeId={recipe._id} />
+      </div>
+
+      {/* Tip (Daraja STK) — below comments */}
+      <div className="mt-8 p-4 bg-white rounded-container shadow-lg border border-accent/20">
+        <h3 className="text-lg font-semibold text-primary mb-1">Tip this recipe</h3>
+        <p className="text-sm text-text/70 mb-3">
+          Send a tip to the chef via Safaricom M-Pesa (STK push).
+        </p>
+        {loggedInUser ? (
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <div className="flex-1">
+              <label className="block text-xs text-text/60 mb-1">Amount (KES)</label>
+              <input
+                type="number"
+                min={1}
+                className="w-full px-3 py-2 rounded-container border border-accent"
+                value={tipAmount}
+                onChange={(e) => setTipAmount(Number(e.target.value))}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-text/60 mb-1">M-Pesa phone</label>
+              <input
+                type="tel"
+                className="w-full px-3 py-2 rounded-container border border-accent"
+                placeholder="07XXXXXXXX or 2547XXXXXXXXX"
+                value={tipPhone}
+                onChange={(e) => setTipPhone(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              disabled={isTipping || tipAmount < 1 || !tipPhone.trim()}
+              onClick={() => void handleTip()}
+              className="px-4 py-2 bg-primary text-white font-semibold rounded-container hover:bg-primary-hover disabled:opacity-50"
+            >
+              {isTipping ? "Sending…" : "Tip with M-Pesa"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-text/70">Sign in to tip the chef.</p>
+        )}
+        {tipSummary !== undefined && (
+          <p className="text-xs text-text/60 mt-2">
+            Tips on this recipe: {tipSummary.totalTips} · KES {tipSummary.totalAmount} total
+          </p>
+        )}
       </div>
     </div>
   );

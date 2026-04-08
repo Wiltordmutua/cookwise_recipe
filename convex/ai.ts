@@ -1,15 +1,34 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 
+/** Groq keys must be set on the Convex deployment (`npx convex env set GROQ_API_KEY ...`). Trim avoids stray spaces/newlines. */
+function requireGroqApiKey(): string {
+  const key = process.env.GROQ_API_KEY?.trim();
+  if (!key) {
+    throw new Error("Groq API key not configured");
+  }
+  return key;
+}
+
+/** Strip optional ```json fences; Groq sometimes wraps JSON in markdown. */
+function stripMarkdownCodeFence(text: string): string {
+  let s = text.trim();
+  if (s.startsWith("```")) {
+    s = s.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/s, "");
+  }
+  return s.trim();
+}
+
+function parseGroqJsonContent(content: string): unknown {
+  return JSON.parse(stripMarkdownCodeFence(content));
+}
+
 export const generateRecipeSuggestions = action({
   args: {
     ingredients: v.string(),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error("Groq API key not configured");
-    }
+    const apiKey = requireGroqApiKey();
 
     const prompt = `Generate 3 unique recipe suggestions using primarily these ingredients: ${args.ingredients}. 
     For each recipe, provide:
@@ -69,6 +88,7 @@ export const generateRecipeSuggestions = action({
       return recipes;
     } catch (error) {
       console.error("Error generating recipe suggestions:", error);
+      if (error instanceof Error) throw error;
       throw new Error("Failed to generate recipe suggestions");
     }
   },
@@ -80,20 +100,27 @@ export const generateIngredientSubstitutions = action({
     dietaryRestrictions: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error("Groq API key not configured");
-    }
+    const apiKey = requireGroqApiKey();
 
-    const prompt = `Provide 3-5 ingredient substitution suggestions for: ${args.ingredient}${args.dietaryRestrictions ? ` considering dietary restrictions: ${args.dietaryRestrictions}` : ''}.
-    
-    For each substitution, provide:
-    1. The substitute ingredient name
-    2. The substitution ratio (e.g., "1:1", "2:1", "1/2 cup for 1 cup")
-    3. Brief explanation of why it works as a substitute
-    4. Any cooking method adjustments needed
-    
-    Format as a JSON array with fields: name, ratio, explanation, notes`;
+    const dietary = args.dietaryRestrictions
+      ? ` Dietary restrictions to respect: ${args.dietaryRestrictions}.`
+      : "";
+
+    const prompt = `Ingredient to find substitutes for: "${args.ingredient}".${dietary}
+
+Return ONLY valid JSON (no markdown, no text before or after) with exactly this shape:
+{
+  "substitutions": [
+    {
+      "name": "substitute ingredient name",
+      "ratio": "e.g. 1:1 or 1/2 cup for 1 cup",
+      "explanation": "why it works",
+      "notes": "cooking adjustments or empty string"
+    }
+  ]
+}
+
+Include 3 to 5 items in "substitutions". Use double quotes for all keys and string values. Escape any " inside strings as \\".`;
 
     try {
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -107,15 +134,17 @@ export const generateIngredientSubstitutions = action({
           messages: [
             {
               role: "system",
-              content: "You are a culinary expert specializing in ingredient substitutions and dietary accommodations."
+              content:
+                "You are a culinary expert. Reply with a single JSON object only, following the user's schema. No markdown fences.",
             },
             {
               role: "user",
-              content: prompt
-            }
+              content: prompt,
+            },
           ],
-          temperature: 0.5,
-          max_tokens: 1000,
+          temperature: 0.3,
+          max_tokens: 1500,
+          response_format: { type: "json_object" },
         }),
       });
 
@@ -125,17 +154,19 @@ export const generateIngredientSubstitutions = action({
       }
 
       const data = await response.json();
-      const generatedText = data.choices[0].message.content;
-      
-      const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        throw new Error("Could not parse substitution suggestions from AI response");
-      }
+      const generatedText = data.choices[0].message.content as string;
 
-      const substitutions = JSON.parse(jsonMatch[0]);
+      const parsed = parseGroqJsonContent(generatedText) as {
+        substitutions?: unknown;
+      };
+      const substitutions = parsed.substitutions;
+      if (!Array.isArray(substitutions)) {
+        throw new Error("AI response did not include a substitutions array");
+      }
       return substitutions;
     } catch (error) {
       console.error("Error generating ingredient substitutions:", error);
+      if (error instanceof Error) throw error;
       throw new Error("Failed to generate ingredient substitutions");
     }
   },
@@ -147,10 +178,7 @@ export const generateCookingTips = action({
     skillLevel: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error("Groq API key not configured");
-    }
+    const apiKey = requireGroqApiKey();
 
     const prompt = `Provide 5 helpful cooking tips for ${args.recipeType}${args.skillLevel ? ` for ${args.skillLevel} cooks` : ''}.
     
@@ -202,6 +230,7 @@ export const generateCookingTips = action({
       return tips;
     } catch (error) {
       console.error("Error generating cooking tips:", error);
+      if (error instanceof Error) throw error;
       throw new Error("Failed to generate cooking tips");
     }
   },
@@ -214,10 +243,7 @@ export const generateMealPlan = action({
     budget: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error("Groq API key not configured");
-    }
+    const apiKey = requireGroqApiKey();
 
     const prompt = `Create a ${args.days}-day meal plan for someone with these dietary preferences: ${args.dietaryPreferences}${args.budget ? ` and budget: ${args.budget}` : ''}.
     
@@ -276,6 +302,7 @@ export const generateMealPlan = action({
       return mealPlan;
     } catch (error) {
       console.error("Error generating meal plan:", error);
+      if (error instanceof Error) throw error;
       throw new Error("Failed to generate meal plan");
     }
   },

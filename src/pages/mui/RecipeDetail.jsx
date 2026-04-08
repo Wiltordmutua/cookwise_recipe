@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Card,
-  CardMedia,
   IconButton,
   Chip,
   Rating,
@@ -27,7 +26,7 @@ import {
   Restaurant,
 } from '@mui/icons-material';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { toast } from 'sonner';
 
@@ -39,11 +38,19 @@ export function RecipeDetail() {
   const addComment = useMutation(api.comments.addComment);
   const comments = useQuery(api.comments.getComments, { recipeId: id });
   const currentUser = useQuery(api.auth.loggedInUser);
+  const initiateTip = useAction(api.tips.initiateRecipeTip);
+  const tipSummary = useQuery(
+    api.tips.getRecipeTipSummary,
+    recipe ? { recipeId: recipe._id } : 'skip',
+  );
 
   const [userRating, setUserRating] = useState(0);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [tipAmount, setTipAmount] = useState(100);
+  const [tipPhone, setTipPhone] = useState('');
+  const [isTipping, setIsTipping] = useState(false);
 
   if (recipe === undefined) {
     return (
@@ -95,6 +102,26 @@ export function RecipeDetail() {
     }
   };
 
+  const handleTip = async () => {
+    setIsTipping(true);
+    try {
+      const result = await initiateTip({
+        recipeId: recipe._id,
+        amount: tipAmount,
+        phoneNumber: tipPhone,
+      });
+      if (result.status === 'pending') {
+        toast.success(result.customerMessage);
+      } else {
+        toast.error('Could not start M-Pesa request.');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to start tip');
+    } finally {
+      setIsTipping(false);
+    }
+  };
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -120,13 +147,26 @@ export function RecipeDetail() {
       <Card elevation={2} sx={{ mb: 4 }}>
         {/* Recipe Image */}
         {recipe.imageUrls.length > 0 && (
-          <CardMedia
-            component="img"
-            height="400"
-            image={recipe.imageUrls[0].url || ''}
-            alt={recipe.title}
-            sx={{ objectFit: 'cover' }}
-          />
+          <Box
+            sx={{
+              width: '100%',
+              maxHeight: { xs: 220, sm: 280 },
+              overflow: 'hidden',
+              bgcolor: 'grey.100',
+            }}
+          >
+            <Box
+              component="img"
+              src={recipe.imageUrls[0].url || ''}
+              alt={recipe.title}
+              sx={{
+                width: '100%',
+                height: { xs: 220, sm: 280 },
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+          </Box>
         )}
 
         <Box sx={{ p: { xs: 3, md: 4 } }}>
@@ -165,7 +205,7 @@ export function RecipeDetail() {
             </Box>
 
             <IconButton
-              onClick={handleToggleFavorite}
+              onClick={() => void handleToggleFavorite()}
               sx={{
                 ml: 2,
                 '&:hover': {
@@ -208,7 +248,9 @@ export function RecipeDetail() {
               </Box>
               <Rating
                 value={userRating}
-                onChange={(event, newValue) => handleRating(newValue)}
+                onChange={(event, newValue) => {
+                  void handleRating(newValue);
+                }}
                 disabled={isSubmittingRating}
                 size="large"
               />
@@ -370,6 +412,55 @@ export function RecipeDetail() {
                 </React.Fragment>
               ))}
             </Box>
+          )}
+        </Box>
+      </Card>
+
+      {/* M-Pesa tip (Daraja STK) — below comments */}
+      <Card elevation={2} sx={{ mt: 4 }}>
+        <Box sx={{ p: { xs: 3, md: 4 } }}>
+          <Typography variant="h4" gutterBottom fontWeight={700} color="primary">
+            Tip this recipe
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Support the chef with Safaricom M-Pesa (STK push).
+          </Typography>
+          {currentUser ? (
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'flex-end' } }}>
+              <TextField
+                label="Amount (KES)"
+                type="number"
+                size="small"
+                inputProps={{ min: 1 }}
+                value={tipAmount}
+                onChange={(e) => setTipAmount(Number(e.target.value))}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="M-Pesa phone"
+                size="small"
+                placeholder="07XXXXXXXX"
+                value={tipPhone}
+                onChange={(e) => setTipPhone(e.target.value)}
+                sx={{ flex: 1 }}
+              />
+              <Button
+                variant="contained"
+                disabled={isTipping || tipAmount < 1 || !tipPhone.trim()}
+                onClick={() => void handleTip()}
+              >
+                {isTipping ? 'Sending…' : 'Tip with M-Pesa'}
+              </Button>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              Sign in to tip the chef.
+            </Typography>
+          )}
+          {tipSummary !== undefined && (
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 2 }}>
+              Tips on this recipe: {tipSummary.totalTips} · KES {tipSummary.totalAmount} total
+            </Typography>
           )}
         </Box>
       </Card>

@@ -28,6 +28,7 @@ export default function AppMUI() {
           <Box component="main" sx={{ flexGrow: 1 }}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/recipe/:id/edit" element={<CreateRecipe />} />
               <Route path="/recipe/:id" element={<RecipeDetail />} />
               <Route path="/create" element={<CreateRecipe />} />
               <Route path="/profile/:userId" element={<Profile />} />

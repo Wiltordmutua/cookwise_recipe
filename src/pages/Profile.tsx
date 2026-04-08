@@ -16,7 +16,7 @@ export function Profile() {
     try {
       const isFollowing = await followUser({ userId: userId as any });
       toast.success(isFollowing ? "Following user!" : "Unfollowed user");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update follow status");
     }
   };
@@ -63,7 +63,7 @@ export function Profile() {
               </h1>
               {!isOwnProfile && currentUser && (
                 <button
-                  onClick={handleFollow}
+                  onClick={() => void handleFollow()}
                   className="px-6 py-2 bg-primary text-white font-semibold rounded-container hover:bg-primary-hover transition-colors"
                 >
                   Follow

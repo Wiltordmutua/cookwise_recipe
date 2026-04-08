@@ -41,6 +41,52 @@ export const createRecipe = mutation({
   },
 });
 
+export const updateRecipe = mutation({
+  args: {
+    recipeId: v.id("recipes"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    ingredients: v.array(v.string()),
+    steps: v.array(v.string()),
+    images: v.array(v.id("_storage")),
+    cuisine: v.string(),
+    tags: v.array(v.string()),
+    prepTime: v.number(),
+    servings: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Must be logged in to edit recipe");
+    }
+
+    const recipe = await ctx.db.get(args.recipeId);
+    if (!recipe) {
+      throw new Error("Recipe not found");
+    }
+    if (recipe.authorId !== userId) {
+      throw new Error("You can only edit your own recipes");
+    }
+
+    const { recipeId, ...fields } = args;
+    const version = recipe.version + 1;
+
+    await ctx.db.patch(recipeId, {
+      ...fields,
+      version,
+    });
+
+    await ctx.db.insert("recipeVersions", {
+      recipeId,
+      version,
+      ...fields,
+      editedBy: userId,
+    });
+
+    return recipeId;
+  },
+});
+
 export const getRecipes = query({
   args: {
     limit: v.optional(v.number()),

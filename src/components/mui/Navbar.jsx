@@ -47,6 +47,13 @@ export function Navbar() {
     setMobileOpen(!mobileOpen);
   };
 
+  const handleSignOut = () => {
+    setMobileOpen(false);
+    void signOut().finally(() => {
+      navigate('/', { replace: true });
+    });
+  };
+
   const navItems = [
     { label: 'Home', path: '/' },
     { label: 'Create Recipe', path: '/create' },
@@ -311,7 +318,7 @@ export function Navbar() {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={() => void signOut()}
+                  onClick={handleSignOut}
                   sx={{
                     color: '#FFFFFF',
                     borderColor: 'rgba(255, 255, 255, 0.4)',

@@ -19,7 +19,6 @@ import {
   FavoriteBorder,
   AccessTime,
   People,
-  Restaurant,
 } from '@mui/icons-material';
 
 interface Recipe {
@@ -74,7 +73,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const _isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const [imageLoading, setImageLoading] = useState(true);
 
   // Use default recipe data if recipe is undefined or incomplete
@@ -338,8 +337,6 @@ export const RecipeGrid: React.FC<RecipeGridProps> = ({
   onFavoriteToggle,
   loading = false,
 }) => {
-  const theme = useTheme();
-  
   // Show skeleton cards when loading
   const displayRecipes = loading ? Array(8).fill(null) : recipes;
 

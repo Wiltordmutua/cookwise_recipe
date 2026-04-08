@@ -21,7 +21,6 @@ import {
   Search,
   Notifications,
   Menu as MenuIcon,
-  AccountCircle,
   Person,
   Settings,
   Logout,
@@ -55,7 +54,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
+  const _isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
   const [searchQuery, setSearchQuery] = useState('');

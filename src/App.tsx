@@ -1,6 +1,5 @@
 import { Authenticated, Unauthenticated, useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
@@ -21,6 +20,7 @@ export default function App() {
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/recipe/:id/edit" element={<CreateRecipe />} />
             <Route path="/recipe/:id" element={<RecipeDetail />} />
             <Route path="/create" element={<CreateRecipe />} />
             <Route path="/profile/:userId" element={<Profile />} />
@@ -41,7 +41,7 @@ function Navbar() {
   // Create user profile if it doesn't exist
   useEffect(() => {
     if (loggedInUser && !loggedInUser.profile) {
-      createUserProfile();
+      void createUserProfile();
     }
   }, [loggedInUser, createUserProfile]);
 
@@ -94,37 +94,5 @@ function Navbar() {
         </div>
       </div>
     </header>
-  );
-}
-
-function Content() {
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-
-  if (loggedInUser === undefined) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-5xl font-bold text-primary mb-4">Welcome to Cookwise</h1>
-        <Authenticated>
-          <p className="text-xl text-text">
-            Ready to cook, {loggedInUser?.profile?.username || loggedInUser?.name || "Chef"}?
-          </p>
-        </Authenticated>
-        <Unauthenticated>
-          <p className="text-xl text-text">Sign in to start sharing recipes</p>
-        </Unauthenticated>
-      </div>
-
-      <Unauthenticated>
-        <SignInForm />
-      </Unauthenticated>
-    </div>
   );
 }

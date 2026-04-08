@@ -14,6 +14,8 @@ import type * as comments from "../comments.js";
 import type * as http from "../http.js";
 import type * as recipes from "../recipes.js";
 import type * as router from "../router.js";
+import type * as tips from "../tips.js";
+import type * as tipsInternal from "../tipsInternal.js";
 import type * as users from "../users.js";
 
 import type {
@@ -29,6 +31,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   recipes: typeof recipes;
   router: typeof router;
+  tips: typeof tips;
+  tipsInternal: typeof tipsInternal;
   users: typeof users;
 }>;
 

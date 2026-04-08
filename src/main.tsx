@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 import "./index.css";
-// @ts-ignore - AppMUI is a .jsx file
+// @ts-expect-error AppMUI is a .jsx file without a TS declaration
 import AppMUI from "./AppMUI";
 
 const convexUrl = import.meta.env.VITE_CONVEX_URL;
