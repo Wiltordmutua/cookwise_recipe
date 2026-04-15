@@ -5,6 +5,17 @@ import type { Id } from "../../convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useNavigate, useMatch, Link } from "react-router-dom";
 
+const CUISINE_OPTIONS = [
+  "Italian",
+  "Mexican",
+  "Asian",
+  "American",
+  "Mediterranean",
+  "Indian",
+  "French",
+  "African",
+];
+
 export function CreateRecipe() {
   const navigate = useNavigate();
   const editMatch = useMatch("/recipe/:id/edit");
@@ -20,6 +31,7 @@ export function CreateRecipe() {
     editRecipeId ? { id: editRecipeId as Id<"recipes"> } : "skip",
   );
   const loggedInUser = useQuery(api.auth.loggedInUser);
+  const hasRegisteredAccount = Boolean(loggedInUser?.email);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -32,6 +44,8 @@ export function CreateRecipe() {
     servings: 4,
   });
   const [images, setImages] = useState<File[]>([]);
+  const [selectedCuisine, setSelectedCuisine] = useState("");
+  const [customCuisine, setCustomCuisine] = useState("");
   const [existingImages, setExistingImages] = useState<
     { id: Id<"_storage">; url: string | null }[]
   >([]);
@@ -47,6 +61,7 @@ export function CreateRecipe() {
 
   useEffect(() => {
     if (!recipe || !isEdit) return;
+    const isPresetCuisine = CUISINE_OPTIONS.includes(recipe.cuisine);
     setFormData({
       title: recipe.title,
       description: recipe.description ?? "",
@@ -57,6 +72,8 @@ export function CreateRecipe() {
       prepTime: recipe.prepTime,
       servings: recipe.servings,
     });
+    setSelectedCuisine(isPresetCuisine ? recipe.cuisine : "Other");
+    setCustomCuisine(isPresetCuisine ? "" : recipe.cuisine);
     setExistingImages(
       recipe.imageUrls.map((img) => ({ id: img.id, url: img.url ?? null })),
     );
@@ -138,6 +155,12 @@ export function CreateRecipe() {
       const tags = formData.tags.split(",").map((tag) => tag.trim()).filter(Boolean);
       const ingredients = formData.ingredients.filter(Boolean);
       const steps = formData.steps.filter(Boolean);
+      const cuisineValue = (selectedCuisine === "Other" ? customCuisine : formData.cuisine).trim();
+
+      if (!cuisineValue) {
+        toast.error("Please select a cuisine or type your custom cuisine.");
+        return;
+      }
 
       if (isEdit && recipe) {
         const newIds = await uploadNewImages();
@@ -149,7 +172,7 @@ export function CreateRecipe() {
           ingredients,
           steps,
           images: allImageIds,
-          cuisine: formData.cuisine,
+          cuisine: cuisineValue,
           tags,
           prepTime: formData.prepTime,
           servings: formData.servings,
@@ -166,7 +189,7 @@ export function CreateRecipe() {
         ingredients,
         steps,
         images: imageIds,
-        cuisine: formData.cuisine,
+        cuisine: cuisineValue,
         tags,
         prepTime: formData.prepTime,
         servings: formData.servings,
@@ -204,13 +227,48 @@ export function CreateRecipe() {
         </div>
       );
     }
-    if (!loggedInUser || loggedInUser._id !== recipe.authorId) {
+    if (!loggedInUser || !hasRegisteredAccount || loggedInUser._id !== recipe.authorId) {
       return (
         <div className="flex justify-center items-center min-h-[200px]">
           <p className="text-text/70">Redirecting…</p>
         </div>
       );
     }
+  }
+
+  if (!isEdit && loggedInUser !== undefined && !hasRegisteredAccount) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <div className="bg-white rounded-container shadow-lg p-8 text-center">
+          <h1 className="text-2xl font-bold text-primary mb-3">Create recipes with an account</h1>
+          <p className="text-text/70 mb-6">
+            Guest mode is great for browsing, but posting recipes requires signing in or creating an account.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link
+              to="/sign-in"
+              className="px-5 py-2 bg-primary text-white font-semibold rounded-container hover:bg-primary-hover transition-colors"
+            >
+              Sign in or sign up
+            </Link>
+            <Link
+              to="/"
+              className="px-5 py-2 border border-primary text-primary font-semibold rounded-container hover:bg-primary/5 transition-colors"
+            >
+              Back to recipes
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isEdit && loggedInUser === undefined) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
   }
 
   return (
@@ -253,21 +311,41 @@ export function CreateRecipe() {
               </label>
               <select
                 required
-                value={formData.cuisine}
-                onChange={(e) => setFormData((prev) => ({ ...prev, cuisine: e.target.value }))}
+                value={selectedCuisine}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedCuisine(value);
+                  if (value === "Other") {
+                    setFormData((prev) => ({ ...prev, cuisine: customCuisine.trim() }));
+                    return;
+                  }
+                  setCustomCuisine("");
+                  setFormData((prev) => ({ ...prev, cuisine: value }));
+                }}
                 className="w-full px-4 py-3 rounded-container border border-accent focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
               >
                 <option value="">Select cuisine</option>
-                <option value="Italian">Italian</option>
-                <option value="Mexican">Mexican</option>
-                <option value="Asian">Asian</option>
-                <option value="American">American</option>
-                <option value="Mediterranean">Mediterranean</option>
-                <option value="Indian">Indian</option>
-                <option value="French">French</option>
-                <option value="African">African</option>
+                {CUISINE_OPTIONS.map((cuisineOption) => (
+                  <option key={cuisineOption} value={cuisineOption}>
+                    {cuisineOption}
+                  </option>
+                ))}
                 <option value="Other">Other</option>
               </select>
+              {selectedCuisine === "Other" && (
+                <input
+                  type="text"
+                  required
+                  value={customCuisine}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setCustomCuisine(value);
+                    setFormData((prev) => ({ ...prev, cuisine: value }));
+                  }}
+                  className="w-full mt-3 px-4 py-3 rounded-container border border-accent focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
+                  placeholder="Type your cuisine (e.g. Ethiopian)"
+                />
+              )}
             </div>
           </div>
 

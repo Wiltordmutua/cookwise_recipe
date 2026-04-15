@@ -39,10 +39,6 @@ export function RecipeDetail() {
   const comments = useQuery(api.comments.getComments, { recipeId: id });
   const currentUser = useQuery(api.auth.loggedInUser);
   const initiateTip = useAction(api.tips.initiateRecipeTip);
-  const tipSummary = useQuery(
-    api.tips.getRecipeTipSummary,
-    recipe ? { recipeId: recipe._id } : 'skip',
-  );
 
   const [userRating, setUserRating] = useState(0);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
@@ -423,7 +419,7 @@ export function RecipeDetail() {
             Tip this recipe
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Support the chef with Safaricom M-Pesa (STK push).
+            Loved this meal? Show some M-Pesa love to the creator
           </Typography>
           {currentUser ? (
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { sm: 'flex-end' } }}>
@@ -455,11 +451,6 @@ export function RecipeDetail() {
           ) : (
             <Typography variant="body2" color="text.secondary">
               Sign in to tip the chef.
-            </Typography>
-          )}
-          {tipSummary !== undefined && (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 2 }}>
-              Tips on this recipe: {tipSummary.totalTips} · KES {tipSummary.totalAmount} total
             </Typography>
           )}
         </Box>

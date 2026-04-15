@@ -111,8 +111,13 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
   return (
     <Card
       sx={{
-        height: '100%',
+        height: 460,
+        minHeight: 460,
+        maxHeight: 460,
         cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
         transition: 'transform 180ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
           transform: 'scale(1.02)',
@@ -188,7 +193,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         />
       </Box>
 
-      <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+      <CardContent sx={{ flexGrow: 1, pb: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Title */}
         <Typography
           variant="h6"
@@ -202,31 +207,35 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             lineHeight: 1.3,
-            minHeight: '2.6em',
+            height: '2.6em',
+            maxHeight: '2.6em',
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere',
           }}
         >
           {safeRecipe.title}
         </Typography>
 
         {/* Description */}
-        {safeRecipe.description && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mb: 2,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              lineHeight: 1.4,
-              minHeight: '2.8em',
-            }}
-          >
-            {safeRecipe.description}
-          </Typography>
-        )}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            mb: 2,
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            lineHeight: 1.4,
+            height: '4.2em',
+            maxHeight: '4.2em',
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {safeRecipe.description || '\u00A0'}
+        </Typography>
 
         {/* Meta Information */}
         <Box
@@ -235,7 +244,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
             alignItems: 'center',
             gap: 2,
             mb: 2,
-            flexWrap: 'wrap',
+            minHeight: 24,
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -253,37 +262,46 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         </Box>
 
         {/* Tags */}
-        {safeRecipe.tags && safeRecipe.tags.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap' }}>
-            {safeRecipe.tags.slice(0, isMobile ? 2 : 3).map((tag, index) => (
-              <Chip
-                key={index}
-                label={`#${tag}`}
-                size="small"
-                variant="outlined"
-                sx={{
-                  fontSize: '0.75rem',
-                  height: 20,
-                  borderColor: theme.palette.info.main,
-                  color: theme.palette.info.main,
-                  '&:hover': {
-                    backgroundColor: `${theme.palette.info.main}10`,
-                  },
-                }}
-              />
-            ))}
-            {safeRecipe.tags && safeRecipe.tags.length > (isMobile ? 2 : 3) && (
-              <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
-                +{safeRecipe.tags.length - (isMobile ? 2 : 3)}
-              </Typography>
-            )}
-          </Box>
-        )}
+        <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'nowrap', minHeight: 24, overflow: 'hidden', alignItems: 'center' }}>
+          {safeRecipe.tags && safeRecipe.tags.length > 0 ? (
+            <>
+              {safeRecipe.tags.slice(0, isMobile ? 2 : 3).map((tag, index) => (
+                <Chip
+                  key={index}
+                  label={`#${tag}`}
+                  size="small"
+                  variant="outlined"
+                  sx={{
+                    fontSize: '0.75rem',
+                    height: 20,
+                    maxWidth: 90,
+                    borderColor: theme.palette.info.main,
+                    color: theme.palette.info.main,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    },
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.info.main}10`,
+                    },
+                  }}
+                />
+              ))}
+              {safeRecipe.tags.length > (isMobile ? 2 : 3) && (
+                <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                  +{safeRecipe.tags.length - (isMobile ? 2 : 3)}
+                </Typography>
+              )}
+            </>
+          ) : (
+            <Box sx={{ height: 20 }} />
+          )}
+        </Box>
       </CardContent>
 
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, minHeight: 48, mt: 'auto', flexWrap: 'nowrap' }}>
         {/* Rating */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
           <Rating
             value={safeRecipe.rating}
             precision={0.1}
@@ -301,7 +319,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         </Box>
 
         {/* Author */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, maxWidth: '45%' }}>
           <Avatar
             src={safeRecipe.author?.avatar}
             sx={{
@@ -314,7 +332,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
           >
             {safeRecipe.author?.username?.[0]?.toUpperCase() || 'U'}
           </Avatar>
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }} noWrap>
             {safeRecipe.author?.username || 'User'}
           </Typography>
         </Box>

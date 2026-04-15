@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 interface CommentsProps {
   recipeId: string;
@@ -11,6 +12,7 @@ export function Comments({ recipeId }: CommentsProps) {
   const comments = useQuery(api.comments.getComments, { recipeId: recipeId as any });
   const addComment = useMutation(api.comments.addComment);
   const currentUser = useQuery(api.auth.loggedInUser);
+  const canComment = Boolean(currentUser?.email);
 
   const [newComment, setNewComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,8 +29,8 @@ export function Comments({ recipeId }: CommentsProps) {
       });
       setNewComment("");
       toast.success("Comment added!");
-    } catch {
-      toast.error("Failed to add comment");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to add comment");
     } finally {
       setIsSubmitting(false);
     }
@@ -39,7 +41,7 @@ export function Comments({ recipeId }: CommentsProps) {
       <h3 className="text-2xl font-bold text-primary mb-6">Comments</h3>
 
       {/* Add Comment Form */}
-      {currentUser && (
+      {canComment ? (
         <form onSubmit={(e) => void handleSubmit(e)} className="mb-6">
           <div className="flex space-x-3">
             <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center text-sm font-semibold text-primary">
@@ -66,6 +68,13 @@ export function Comments({ recipeId }: CommentsProps) {
             </div>
           </div>
         </form>
+      ) : (
+        <div className="mb-6 rounded-container border border-accent bg-secondary/20 p-4 text-sm text-text/80">
+          Sign in or sign up to comment on recipes.
+          <Link to="/sign-in" className="ml-2 font-semibold text-primary hover:underline">
+            Continue to sign in
+          </Link>
+        </div>
       )}
 
       {/* Comments List */}

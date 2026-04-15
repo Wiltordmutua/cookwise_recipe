@@ -50,7 +50,7 @@ export function Navbar() {
   const handleSignOut = () => {
     setMobileOpen(false);
     void signOut().finally(() => {
-      navigate('/', { replace: true });
+      navigate('/sign-in', { replace: true });
     });
   };
 

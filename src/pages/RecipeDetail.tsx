@@ -23,6 +23,9 @@ export function RecipeDetail() {
   const [tipAmount, setTipAmount] = useState(100);
   const [tipPhone, setTipPhone] = useState("");
   const [isTipping, setIsTipping] = useState(false);
+  const canRateRecipe = Boolean(loggedInUser?.email);
+  const canFavoriteRecipe = Boolean(loggedInUser?.email);
+  const canTipRecipe = Boolean(loggedInUser?.email);
 
   if (recipe === undefined) {
     return (
@@ -44,28 +47,43 @@ export function RecipeDetail() {
   }
 
   const handleRating = async (rating: number) => {
+    if (!canRateRecipe) {
+      toast.error("Please sign in or sign up with an account to rate recipes.");
+      return;
+    }
+
     setIsSubmittingRating(true);
     try {
       await rateRecipe({ recipeId: recipe._id, rating });
       setUserRating(rating);
       toast.success("Rating submitted!");
-    } catch {
-      toast.error("Failed to submit rating");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit rating");
     } finally {
       setIsSubmittingRating(false);
     }
   };
 
   const handleToggleFavorite = async () => {
+    if (!canFavoriteRecipe) {
+      toast.error("Please sign in or sign up with an account to save favorites.");
+      return;
+    }
+
     try {
       const isFavorited = await toggleFavorite({ recipeId: recipe._id });
       toast.success(isFavorited ? "Added to favorites!" : "Removed from favorites");
-    } catch {
-      toast.error("Failed to update favorites");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update favorites");
     }
   };
 
   const handleTip = async () => {
+    if (!canTipRecipe) {
+      toast.error("Please sign in or sign up with an account to tip the chef.");
+      return;
+    }
+
     setIsTipping(true);
     try {
       const result = await initiateTip({
@@ -128,7 +146,8 @@ export function RecipeDetail() {
             <button
               type="button"
               onClick={() => void handleToggleFavorite()}
-              className="p-2 rounded-full hover:bg-secondary transition-colors"
+              className="p-2 rounded-full hover:bg-secondary transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={!canFavoriteRecipe}
             >
               <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -153,11 +172,16 @@ export function RecipeDetail() {
                   </span>
                 </div>
                 <p className="text-sm text-text/70">Rate this recipe:</p>
+                {!canRateRecipe && (
+                  <p className="text-xs text-text/60 mt-1">
+                    Sign in or sign up to submit a rating.
+                  </p>
+                )}
               </div>
               <StarRating
                 rating={userRating}
                 onRatingChange={(rating) => void handleRating(rating)}
-                disabled={isSubmittingRating}
+                disabled={isSubmittingRating || !canRateRecipe}
               />
             </div>
           </div>
@@ -219,9 +243,9 @@ export function RecipeDetail() {
       <div className="mt-8 p-4 bg-white rounded-container shadow-lg border border-accent/20">
         <h3 className="text-lg font-semibold text-primary mb-1">Tip this recipe</h3>
         <p className="text-sm text-text/70 mb-3">
-          Send a tip to the chef via Safaricom M-Pesa (STK push).
+          Loved this meal? Show some M-Pesa love to the creator
         </p>
-        {loggedInUser ? (
+        {canTipRecipe ? (
           <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
             <div className="flex-1">
               <label className="block text-xs text-text/60 mb-1">Amount (KES)</label>
@@ -253,7 +277,12 @@ export function RecipeDetail() {
             </button>
           </div>
         ) : (
-          <p className="text-sm text-text/70">Sign in to tip the chef.</p>
+          <p className="text-sm text-text/70">
+            Sign in or sign up with an account to tip the chef.
+            <Link to="/sign-in" className="ml-2 font-semibold text-primary hover:underline">
+              Continue to sign in
+            </Link>
+          </p>
         )}
         {tipSummary !== undefined && (
           <p className="text-xs text-text/60 mt-2">

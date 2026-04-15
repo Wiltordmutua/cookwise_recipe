@@ -57,12 +57,14 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
     <Card
       onClick={handleCardClick}
       sx={{
-        height: '100%',
+        height: 460,
+        minHeight: 460,
+        maxHeight: 460,
         width: '100%',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
-        maxHeight: '100%',
+        overflow: 'hidden',
       }}
     >
       {/* Image Section */}
@@ -131,7 +133,10 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             height: '3em',
+            maxHeight: '3em',
             lineHeight: '1.5em',
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere',
           }}
         >
           {recipe?.title || 'Loading...'}
@@ -143,12 +148,15 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
           sx={{
             mb: 2,
             display: '-webkit-box',
-            WebkitLineClamp: 2,
+            WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            height: '2.8em',
+            height: '4.2em',
+            maxHeight: '4.2em',
             lineHeight: '1.4em',
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere',
           }}
         >
           {recipe?.description || '\u00A0'}
@@ -171,7 +179,7 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
         </Box>
 
         {/* Tags */}
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap', minHeight: '24px' }}>
+        <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'nowrap', minHeight: '24px', overflow: 'hidden', alignItems: 'center' }}>
           {recipe?.tags && recipe.tags.length > 0 ? (
             <>
               {recipe.tags.slice(0, 3).map((tag, index) => (
@@ -183,6 +191,11 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
                   sx={{
                     fontSize: '0.7rem',
                     height: 22,
+                    maxWidth: 90,
+                    '& .MuiChip-label': {
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    },
                   }}
                 />
               ))}
@@ -199,8 +212,8 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
       </CardContent>
 
       {/* Footer */}
-      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, minHeight: '48px', mt: 'auto' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2, minHeight: '48px', mt: 'auto', flexWrap: 'nowrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
           <Rating
             value={recipe?.rating || 0}
             precision={0.1}
@@ -217,7 +230,7 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, maxWidth: '45%' }}>
           <Avatar
             src={recipe?.author?.avatar}
             sx={{
@@ -228,7 +241,7 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
           >
             {recipe?.author?.username?.[0]?.toUpperCase() || 'U'}
           </Avatar>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" noWrap>
             {recipe?.author?.username || 'User'}
           </Typography>
         </Box>

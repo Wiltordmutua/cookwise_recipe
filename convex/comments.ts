@@ -2,6 +2,20 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+async function requireRegisteredUser(ctx: any) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) {
+    throw new Error("Please sign in or sign up to continue.");
+  }
+
+  const user = await ctx.db.get(userId);
+  if (!user || !user.email) {
+    throw new Error("Please sign in or sign up with an account to comment.");
+  }
+
+  return userId;
+}
+
 export const getComments = query({
   args: { recipeId: v.id("recipes") },
   handler: async (ctx, args) => {
@@ -40,10 +54,7 @@ export const addComment = mutation({
     parentCommentId: v.optional(v.id("comments")),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Must be logged in to comment");
-    }
+    const userId = await requireRegisteredUser(ctx);
 
     const commentId = await ctx.db.insert("comments", {
       recipeId: args.recipeId,

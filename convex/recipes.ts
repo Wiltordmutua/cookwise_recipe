@@ -2,6 +2,20 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+async function requireRegisteredUser(ctx: any) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) {
+    throw new Error("Please sign in or sign up to continue.");
+  }
+
+  const user = await ctx.db.get(userId);
+  if (!user || !user.email) {
+    throw new Error("Please sign in or sign up with an account to do this.");
+  }
+
+  return userId;
+}
+
 export const createRecipe = mutation({
   args: {
     title: v.string(),
@@ -15,10 +29,7 @@ export const createRecipe = mutation({
     servings: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Must be logged in to create recipe");
-    }
+    const userId = await requireRegisteredUser(ctx);
 
     const recipeId = await ctx.db.insert("recipes", {
       ...args,
@@ -55,10 +66,7 @@ export const updateRecipe = mutation({
     servings: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Must be logged in to edit recipe");
-    }
+    const userId = await requireRegisteredUser(ctx);
 
     const recipe = await ctx.db.get(args.recipeId);
     if (!recipe) {
@@ -180,10 +188,7 @@ export const rateRecipe = mutation({
     rating: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Must be logged in to rate recipe");
-    }
+    const userId = await requireRegisteredUser(ctx);
 
     // Check if user already rated this recipe
     const existingRating = await ctx.db
@@ -239,10 +244,7 @@ export const rateRecipe = mutation({
 export const toggleFavorite = mutation({
   args: { recipeId: v.id("recipes") },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Must be logged in to favorite recipe");
-    }
+    const userId = await requireRegisteredUser(ctx);
 
     const existing = await ctx.db
       .query("favorites")

@@ -48,7 +48,11 @@ export function Home() {
                 },
                 isFavorite: false,
               };
-              return <RecipeCard key={recipe._id} recipe={mapped} />;
+              return (
+                <div key={recipe._id} className="h-[460px]">
+                  <RecipeCard recipe={mapped} />
+                </div>
+              );
             })}
           </div>
         )}

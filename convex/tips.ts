@@ -31,6 +31,20 @@ function toBase64(asciiString: string): string {
   return btoa(asciiString);
 }
 
+async function requireRegisteredUser(ctx: any) {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) {
+    throw new Error("Please sign in or sign up to continue.");
+  }
+
+  const user = await ctx.runQuery(api.auth.loggedInUser, {});
+  if (!user || !user.email) {
+    throw new Error("Please sign in or sign up with an account to tip.");
+  }
+
+  return userId;
+}
+
 export const getRecipeTipSummary = query({
   args: { recipeId: v.id("recipes") },
   handler: async (ctx, args) => {
@@ -59,8 +73,7 @@ export const initiateRecipeTip = action({
     customerMessage: string;
     status: "pending" | "failed";
   }> => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("You must be signed in to tip.");
+    const userId = await requireRegisteredUser(ctx);
 
     if (args.amount < 1) throw new Error("Tip amount must be at least KES 1.");
 
