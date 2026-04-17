@@ -1,7 +1,7 @@
 "use client";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvex, useQuery } from "convex/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { api } from "../convex/_generated/api";
@@ -19,6 +19,18 @@ function validatePassword(password: string) {
   );
 }
 
+function isValidEmail(email: string) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  const domain = email.split("@")[1] ?? "";
+  const normalizedDomain = domain.trim().toLowerCase();
+  // Treat common providers as exact domains, but allow any other provider.
+  if (normalizedDomain.startsWith("gmail.") && normalizedDomain !== "gmail.com") return false;
+  if (normalizedDomain.startsWith("yahoo.") && normalizedDomain !== "yahoo.com") return false;
+  if (normalizedDomain.startsWith("icloud.") && normalizedDomain !== "icloud.com") return false;
+  if (normalizedDomain.startsWith("outlook.") && normalizedDomain !== "outlook.com") return false;
+  return true;
+}
+
 export function SignInForm() {
   const { signIn, signOut } = useAuthActions();
   const convex = useConvex();
@@ -26,6 +38,7 @@ export function SignInForm() {
   const navigate = useNavigate();
   const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
   const [submitting, setSubmitting] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <div className="w-full">
@@ -41,6 +54,9 @@ export function SignInForm() {
           formData.set("email", normalizedEmail);
           formData.set("flow", flow);
           void (async () => {
+            if (!isValidEmail(normalizedEmail)) {
+              throw new Error("Invalid email");
+            }
             if (flow === "signUp" && !validatePassword(rawPassword)) {
               throw new Error("Password constraints not met");
             }
@@ -64,7 +80,9 @@ export function SignInForm() {
             })
             .catch((error) => {
               let toastTitle = "";
-              if (error.message.includes("Password constraints not met")) {
+              if (error.message.includes("Invalid email")) {
+                toastTitle = "Please enter a valid email address.";
+              } else if (error.message.includes("Password constraints not met")) {
                 toastTitle = PASSWORD_REQUIREMENTS_TEXT;
               } else if (error.message.includes("Email already registered")) {
                 toastTitle = "This email is already registered. Please sign in instead.";
@@ -80,6 +98,9 @@ export function SignInForm() {
                     : "Could not sign up, did you mean to sign in?";
               }
               toast.error(toastTitle);
+              if (passwordInputRef.current) {
+                passwordInputRef.current.value = "";
+              }
               setSubmitting(false);
             });
         }}
@@ -97,6 +118,7 @@ export function SignInForm() {
           name="password"
           placeholder="Password"
           required
+          ref={passwordInputRef}
         />
         <button className="auth-button" type="submit" disabled={submitting}>
           {flow === "signIn" ? "Sign in" : "Sign up"}

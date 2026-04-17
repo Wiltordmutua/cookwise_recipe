@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useAction } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { Drawer, IconButton, Tooltip } from "@mui/material";
+import HistoryIcon from "@mui/icons-material/History";
 
 interface AIRecipe {
   title: string;
-  description: string;
+  description?: string;
   ingredients: string[];
   steps: string[];
   prepTime: number;
@@ -38,6 +40,9 @@ type TabType = 'recipes' | 'substitutions' | 'tips' | 'mealplan';
 
 export function AIRecipes() {
   const [activeTab, setActiveTab] = useState<TabType>('recipes');
+  const [activeRecipeView, setActiveRecipeView] = useState<"suggestions" | "saved">("suggestions");
+  const [activeSearchId, setActiveSearchId] = useState<any>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   
   // Recipe generation state
   const [ingredients, setIngredients] = useState("");
@@ -64,6 +69,10 @@ export function AIRecipes() {
   const generateSubstitutions = useAction(api.ai.generateIngredientSubstitutions);
   const generateCookingTips = useAction(api.ai.generateCookingTips);
   const generateMealPlan = useAction(api.ai.generateMealPlan);
+  const addRecipeSearch = useMutation(api.aiRecipeLibrary.addRecipeSearch);
+
+  const recipeSearchHistory = useQuery(api.aiRecipeLibrary.listRecipeSearches, { limit: 30 });
+  const savedAiRecipes = useQuery(api.aiRecipeLibrary.listSavedAiRecipes, { limit: 100 });
 
   const handleRecipeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +82,17 @@ export function AIRecipes() {
     try {
       const recipes = await generateSuggestions({ ingredients: ingredients.trim() });
       setSuggestions(recipes);
+      setActiveRecipeView("suggestions");
+      try {
+        const searchId = await addRecipeSearch({
+          prompt: ingredients.trim(),
+          recipes,
+        });
+        setActiveSearchId(searchId);
+      } catch {
+        // Non-fatal (e.g. user not logged in).
+        setActiveSearchId(null);
+      }
       toast.success("Recipe suggestions generated!");
     } catch {
       toast.error("Failed to generate suggestions. Please try again.");
@@ -147,7 +167,25 @@ export function AIRecipes() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8 relative">
+      {/* History icon (top-right of page) */}
+      <div className="absolute right-4 top-4 z-10">
+        <Tooltip title="History" placement="left">
+          <IconButton
+            onClick={() => setIsHistoryOpen(true)}
+            size="small"
+            sx={{
+              border: "1px solid rgba(108, 117, 95, 0.6)",
+              color: "primary.main",
+              backgroundColor: "background.paper",
+            }}
+            aria-label="Open history"
+          >
+            <HistoryIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </div>
+
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-primary mb-4">
           AI-Powered Cooking Assistant
@@ -209,19 +247,126 @@ export function AIRecipes() {
             </form>
           </div>
 
-          {suggestions.length > 0 && (
-            <div className="space-y-6">
-              <h3 className="text-2xl font-bold text-primary">
-                Here are your personalized recipe suggestions:
-              </h3>
-              
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveRecipeView("suggestions")}
+                className={`px-3 py-2 rounded-container text-sm font-semibold border ${
+                  activeRecipeView === "suggestions"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-primary border-primary hover:bg-primary hover:text-white"
+                }`}
+              >
+                Suggestions
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveRecipeView("saved")}
+                className={`px-3 py-2 rounded-container text-sm font-semibold border ${
+                  activeRecipeView === "saved"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-primary border-primary hover:bg-primary hover:text-white"
+                }`}
+              >
+                Saved
+              </button>
+            </div>
+
+            {activeRecipeView === "saved" ? (
+              savedAiRecipes === undefined ? (
+                <div className="bg-white rounded-container shadow-lg p-6">
+                  <p className="text-sm text-text/70">Loading saved recipes…</p>
+                </div>
+              ) : savedAiRecipes.length === 0 ? (
+                <div className="bg-white rounded-container shadow-lg p-6">
+                  <p className="text-sm text-text/70">No saved recipes yet.</p>
+                </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2">
+                  {savedAiRecipes.map((r) => (
+                    <AIRecipeCard
+                      key={String(r._id)}
+                      recipe={{
+                        title: r.title,
+                        description: r.description,
+                        ingredients: r.ingredients,
+                        steps: r.steps,
+                        prepTime: r.prepTime,
+                        servings: r.servings,
+                        cuisine: r.cuisine,
+                        tags: r.tags,
+                      }}
+                      sourceSearchId={r.sourceSearchId ? String(r.sourceSearchId) : null}
+                    />
+                  ))}
+                </div>
+              )
+            ) : suggestions.length === 0 ? (
+              <div className="bg-white rounded-container shadow-lg p-6">
+                <p className="text-sm text-text/70">Generate suggestions or pick one from history.</p>
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2">
                 {suggestions.map((recipe, index) => (
-                  <AIRecipeCard key={index} recipe={recipe} />
+                  <AIRecipeCard key={index} recipe={recipe} sourceSearchId={activeSearchId} />
                 ))}
               </div>
+            )}
+          </div>
+
+          <Drawer
+            anchor="right"
+            open={isHistoryOpen}
+            onClose={() => setIsHistoryOpen(false)}
+            PaperProps={{ sx: { width: { xs: "92vw", sm: 420 }, p: 2 } }}
+          >
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="text-lg font-bold text-primary">History</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setSuggestions([]);
+                  setActiveSearchId(null);
+                }}
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                Clear view
+              </button>
             </div>
-          )}
+
+            {recipeSearchHistory === undefined ? (
+              <p className="text-sm text-text/70">Loading…</p>
+            ) : recipeSearchHistory.length === 0 ? (
+              <p className="text-sm text-text/70">No searches yet.</p>
+            ) : (
+              <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">
+                {recipeSearchHistory.map((search) => (
+                  <button
+                    key={search._id}
+                    type="button"
+                    onClick={() => {
+                      setIngredients(search.prompt);
+                      setSuggestions(search.recipes);
+                      setActiveRecipeView("suggestions");
+                      setActiveSearchId(search._id);
+                      setIsHistoryOpen(false);
+                    }}
+                    className={`w-full text-left rounded-container border px-3 py-2 transition-colors ${
+                      String(search._id) === String(activeSearchId)
+                        ? "border-primary bg-primary/5"
+                        : "border-accent hover:bg-accent/20"
+                    }`}
+                  >
+                    <div className="text-sm font-semibold text-text line-clamp-2">{search.prompt}</div>
+                    <div className="text-xs text-text/60 mt-1">
+                      {search.recipes.length} suggestion{search.recipes.length === 1 ? "" : "s"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Drawer>
         </div>
       )}
 
@@ -458,12 +603,50 @@ export function AIRecipes() {
   );
 }
 
-function AIRecipeCard({ recipe }: { recipe: AIRecipe }) {
+function AIRecipeCard({
+  recipe,
+  sourceSearchId,
+}: {
+  recipe: AIRecipe;
+  sourceSearchId?: any;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const visibleIngredients = isExpanded ? recipe.ingredients : recipe.ingredients.slice(0, 5);
+  const visibleSteps = isExpanded ? recipe.steps : recipe.steps.slice(0, 3);
+  const toggleSave = useMutation(api.aiRecipeLibrary.toggleSaveAiRecipe);
+  const isSaved = useQuery(api.aiRecipeLibrary.isAiRecipeSaved, { recipe });
+  const [isSaving, setIsSaving] = useState(false);
+
   return (
     <div className="bg-white rounded-container shadow-lg overflow-hidden">
       <div className="p-6">
-        <h3 className="text-xl font-bold text-primary mb-2">{recipe.title}</h3>
-        <p className="text-text/70 text-sm mb-4">{recipe.description}</p>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-xl font-bold text-primary mb-2">{recipe.title}</h3>
+          <button
+            type="button"
+            disabled={isSaving || isSaved === undefined}
+            onClick={() => {
+              setIsSaving(true);
+              void toggleSave({
+                recipe,
+                sourceSearchId: sourceSearchId ?? undefined,
+              })
+                .then((res) => {
+                  toast.success(res.saved ? "Saved recipe" : "Removed from saved");
+                })
+                .catch(() => toast.error("Could not update saved recipes"))
+                .finally(() => setIsSaving(false));
+            }}
+            className={`shrink-0 px-3 py-2 rounded-container text-sm font-semibold border transition-colors disabled:opacity-50 ${
+              isSaved
+                ? "bg-primary text-white border-primary hover:bg-primary-hover"
+                : "bg-white text-primary border-primary hover:bg-primary hover:text-white"
+            }`}
+          >
+            {isSaved ? "Saved" : "Save"}
+          </button>
+        </div>
+        <p className="text-text/70 text-sm mb-4">{recipe.description ?? ""}</p>
         
         <div className="flex items-center space-x-4 text-sm text-text/70 mb-4">
           <span>{recipe.prepTime} min</span>
@@ -478,11 +661,19 @@ function AIRecipeCard({ recipe }: { recipe: AIRecipe }) {
         <div className="mb-4">
           <h4 className="font-semibold text-text mb-2">Ingredients:</h4>
           <ul className="text-sm text-text/70 space-y-1">
-            {recipe.ingredients.slice(0, 5).map((ingredient, i) => (
+            {visibleIngredients.map((ingredient, i) => (
               <li key={i}>• {ingredient}</li>
             ))}
-            {recipe.ingredients.length > 5 && (
-              <li className="text-primary">+ {recipe.ingredients.length - 5} more...</li>
+            {!isExpanded && recipe.ingredients.length > 5 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(true)}
+                  className="text-primary font-medium hover:underline"
+                >
+                  + {recipe.ingredients.length - 5} more…
+                </button>
+              </li>
             )}
           </ul>
         </div>
@@ -490,13 +681,33 @@ function AIRecipeCard({ recipe }: { recipe: AIRecipe }) {
         <div className="mb-4">
           <h4 className="font-semibold text-text mb-2">Steps:</h4>
           <ol className="text-sm text-text/70 space-y-1">
-            {recipe.steps.slice(0, 3).map((step, i) => (
-              <li key={i}>{i + 1}. {step.substring(0, 60)}...</li>
+            {visibleSteps.map((step, i) => (
+              <li key={i}>
+                {i + 1}. {isExpanded ? step : `${step.substring(0, 60)}...`}
+              </li>
             ))}
-            {recipe.steps.length > 3 && (
-              <li className="text-primary">+ {recipe.steps.length - 3} more steps...</li>
+            {!isExpanded && recipe.steps.length > 3 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(true)}
+                  className="text-primary font-medium hover:underline"
+                >
+                  + {recipe.steps.length - 3} more steps…
+                </button>
+              </li>
             )}
           </ol>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((v) => !v)}
+            className="text-primary font-semibold hover:underline"
+          >
+            {isExpanded ? "Show less" : "Show full recipe"}
+          </button>
         </div>
 
         {recipe.tags.length > 0 && (

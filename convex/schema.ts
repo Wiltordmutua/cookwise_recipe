@@ -3,6 +3,39 @@ import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
 const applicationTables = {
+  aiRecipeSearches: defineTable({
+    userId: v.id("users"),
+    prompt: v.string(),
+    recipes: v.array(
+      v.object({
+        title: v.string(),
+        description: v.optional(v.string()),
+        ingredients: v.array(v.string()),
+        steps: v.array(v.string()),
+        prepTime: v.number(),
+        servings: v.number(),
+        cuisine: v.string(),
+        tags: v.array(v.string()),
+      }),
+    ),
+  }).index("by_user", ["userId"]),
+
+  savedAiRecipes: defineTable({
+    userId: v.id("users"),
+    fingerprint: v.string(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    ingredients: v.array(v.string()),
+    steps: v.array(v.string()),
+    prepTime: v.number(),
+    servings: v.number(),
+    cuisine: v.string(),
+    tags: v.array(v.string()),
+    sourceSearchId: v.optional(v.id("aiRecipeSearches")),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_fingerprint", ["userId", "fingerprint"]),
+
   recipes: defineTable({
     title: v.string(),
     description: v.optional(v.string()),

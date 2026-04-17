@@ -77,19 +77,7 @@ export function Home() {
                 maxWidth: { md: '72%' },
               }}
             >
-              <Chip
-                icon={<Restaurant sx={{ fontSize: 18 }} />}
-                label="Community recipes"
-                size="small"
-                sx={{
-                  alignSelf: 'flex-start',
-                  fontWeight: 600,
-                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                  color: 'primary.dark',
-                  border: 'none',
-                  '& .MuiChip-icon': { color: 'primary.main' },
-                }}
-              />
+              
               <Typography
                 variant="h2"
                 component="h1"
@@ -105,7 +93,7 @@ export function Home() {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                Discover recipes worth cooking tonight
+                Discover amazing recipes worth cooking
               </Typography>
               <Typography
                 variant="h6"
@@ -143,15 +131,6 @@ export function Home() {
                   sx={{ py: 1.25, px: 2.5, fontWeight: 600 }}
                 >
                   AI suggestions
-                </Button>
-                <Button
-                  variant="text"
-                  size="large"
-                  component={RouterLink}
-                  to="/search"
-                  sx={{ py: 1.25, fontWeight: 600 }}
-                >
-                  Search
                 </Button>
               </Stack>
               {recipes !== undefined && (

@@ -117,7 +117,7 @@ export const getRecipes = query({
       recipes = await ctx.db
         .query("recipes")
         .withIndex("by_approved", (q) => q.eq("isApproved", true))
-        .order("desc")
+        .order("asc")
         .take(args.limit || 20);
     }
     
@@ -263,6 +263,54 @@ export const toggleFavorite = mutation({
       });
       return true;
     }
+  },
+});
+
+export const listFavoriteRecipes = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const favorites = await ctx.db
+      .query("favorites")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(args.limit ?? 50);
+
+    const recipes = await Promise.all(
+      favorites.map(async (fav) => {
+        const recipe = await ctx.db.get(fav.recipeId);
+        if (!recipe || !recipe.isApproved) return null;
+
+        const author = await ctx.db.get(recipe.authorId);
+        const authorProfile = await ctx.db
+          .query("userProfiles")
+          .withIndex("by_user", (q) => q.eq("userId", recipe.authorId))
+          .unique();
+
+        const imageUrls = await Promise.all(
+          recipe.images.map(async (imageId) => {
+            const url = await ctx.storage.getUrl(imageId);
+            return { id: imageId, url };
+          }),
+        );
+
+        return {
+          ...recipe,
+          isFavorite: true,
+          author: {
+            ...(author ?? {}),
+            profile: authorProfile,
+          },
+          imageUrls,
+        };
+      }),
+    );
+
+    return recipes.filter((r): r is NonNullable<typeof r> => r !== null);
   },
 });
 

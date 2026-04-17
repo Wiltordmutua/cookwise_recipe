@@ -9,6 +9,7 @@
  */
 
 import type * as ai from "../ai.js";
+import type * as aiRecipeLibrary from "../aiRecipeLibrary.js";
 import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
 import type * as http from "../http.js";
@@ -26,6 +27,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
+  aiRecipeLibrary: typeof aiRecipeLibrary;
   auth: typeof auth;
   comments: typeof comments;
   http: typeof http;

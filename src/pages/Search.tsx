@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { RecipeCard } from "../components/RecipeCard";
 
 export function Search() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("");
   
@@ -80,9 +82,30 @@ export function Search() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {recipes.map((recipe) => (
-              <RecipeCard key={recipe._id} recipe={recipe} />
-            ))}
+            {recipes.map((recipe) => {
+              const mapped = {
+                id: String(recipe._id),
+                title: recipe.title,
+                description: recipe.description,
+                imageUrl: recipe.imageUrls?.[0]?.url || "",
+                prepTime: recipe.prepTime,
+                servings: recipe.servings,
+                cuisine: recipe.cuisine,
+                tags: recipe.tags || [],
+                rating: recipe.averageRating ?? 0,
+                totalRatings: recipe.totalRatings ?? 0,
+                author: {
+                  username: recipe.author?.profile?.username || "User",
+                  avatar: "",
+                },
+                isFavorite: recipe.isFavorite ?? false,
+              };
+              return (
+                <div key={recipe._id} className="h-[460px]">
+                  <RecipeCard recipe={mapped as any} onClick={(id) => navigate(`/recipe/${id}`)} />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

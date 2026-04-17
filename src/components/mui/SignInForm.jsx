@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   TextField,
@@ -26,6 +26,18 @@ function validatePassword(password) {
   );
 }
 
+function isValidEmail(email) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  const domain = email.split('@')[1] || '';
+  const normalizedDomain = domain.trim().toLowerCase();
+  // Treat common providers as exact domains, but allow any other provider.
+  if (normalizedDomain.startsWith('gmail.') && normalizedDomain !== 'gmail.com') return false;
+  if (normalizedDomain.startsWith('yahoo.') && normalizedDomain !== 'yahoo.com') return false;
+  if (normalizedDomain.startsWith('icloud.') && normalizedDomain !== 'icloud.com') return false;
+  if (normalizedDomain.startsWith('outlook.') && normalizedDomain !== 'outlook.com') return false;
+  return true;
+}
+
 export function SignInForm() {
   const { signIn, signOut } = useAuthActions();
   const convex = useConvex();
@@ -33,6 +45,7 @@ export function SignInForm() {
   const navigate = useNavigate();
   const [flow, setFlow] = useState('signIn');
   const [submitting, setSubmitting] = useState(false);
+  const passwordInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,6 +58,9 @@ export function SignInForm() {
     formData.set('flow', flow);
 
     try {
+      if (!isValidEmail(normalizedEmail)) {
+        throw new Error('Invalid email');
+      }
       if (flow === 'signUp' && !validatePassword(rawPassword)) {
         throw new Error('Password constraints not met');
       }
@@ -66,7 +82,9 @@ export function SignInForm() {
       navigate('/', { replace: true });
     } catch (error) {
       let toastTitle = '';
-      if (error.message.includes('Password constraints not met')) {
+      if (error.message.includes('Invalid email')) {
+        toastTitle = 'Please enter a valid email address.';
+      } else if (error.message.includes('Password constraints not met')) {
         toastTitle = PASSWORD_REQUIREMENTS_TEXT;
       } else if (error.message.includes('Email already registered')) {
         toastTitle = 'This email is already registered. Please sign in instead.';
@@ -81,6 +99,9 @@ export function SignInForm() {
             : 'Could not sign up, did you mean to sign in?';
       }
       toast.error(toastTitle);
+      if (passwordInputRef.current) {
+        passwordInputRef.current.value = '';
+      }
       setSubmitting(false);
     }
   };
@@ -114,6 +135,7 @@ export function SignInForm() {
           required
           fullWidth
           autoComplete={flow === 'signIn' ? 'current-password' : 'new-password'}
+          inputRef={passwordInputRef}
         />
 
         <Button
