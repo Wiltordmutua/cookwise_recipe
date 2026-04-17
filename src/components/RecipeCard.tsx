@@ -139,7 +139,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
         <CardMedia
           component="img"
           height="200"
-          image={safeRecipe.imageUrl || '/placeholder-recipe.jpg'}
+          image={safeRecipe.imageUrl || '/placeholder-recipe.svg'}
           alt={safeRecipe.title}
           onLoad={() => setImageLoading(false)}
           sx={{

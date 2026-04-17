@@ -72,7 +72,7 @@ export function RecipeCard({ recipe, onFavoriteToggle, loading = false }) {
         {!imageLoaded && <Skeleton variant="rectangular" height={200} width="100%" />}
         <CardMedia
           component="img"
-          image={recipe?.imageUrl || '/placeholder-recipe.jpg'}
+          image={recipe?.imageUrl || '/placeholder-recipe.svg'}
           alt={recipe?.title || 'Recipe'}
           onLoad={() => setImageLoaded(true)}
           sx={{

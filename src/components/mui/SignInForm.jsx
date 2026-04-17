@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   TextField,
@@ -6,7 +6,11 @@ import {
   Typography,
   Divider,
   Paper,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useAuthActions } from '@convex-dev/auth/react';
 import { useConvex, useQuery } from 'convex/react';
 import { useNavigate } from 'react-router-dom';
@@ -45,15 +49,18 @@ export function SignInForm() {
   const navigate = useNavigate();
   const [flow, setFlow] = useState('signIn');
   const [submitting, setSubmitting] = useState(false);
-  const passwordInputRef = useRef(null);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [hasAuthError, setHasAuthError] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setHasAuthError(false);
     const formData = new FormData(e.target);
     const rawEmail = String(formData.get('email') ?? '');
     const normalizedEmail = rawEmail.trim().toLowerCase();
-    const rawPassword = String(formData.get('password') ?? '');
+    const rawPassword = password;
     formData.set('email', normalizedEmail);
     formData.set('flow', flow);
 
@@ -99,9 +106,7 @@ export function SignInForm() {
             : 'Could not sign up, did you mean to sign in?';
       }
       toast.error(toastTitle);
-      if (passwordInputRef.current) {
-        passwordInputRef.current.value = '';
-      }
+      setHasAuthError(true);
       setSubmitting(false);
     }
   };
@@ -128,14 +133,34 @@ export function SignInForm() {
         />
 
         <TextField
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           name="password"
           label="Password"
           placeholder="Enter your password"
           required
           fullWidth
           autoComplete={flow === 'signIn' ? 'current-password' : 'new-password'}
-          inputRef={passwordInputRef}
+          value={password}
+          onChange={(event) => {
+            setPassword(event.target.value);
+            if (hasAuthError) {
+              setHasAuthError(false);
+            }
+          }}
+          InputProps={{
+            endAdornment: hasAuthError && password ? (
+              <InputAdornment position="end">
+                <IconButton
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  edge="end"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ) : null,
+          }}
         />
 
         <Button
